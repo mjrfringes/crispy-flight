@@ -3,9 +3,15 @@
 # This relies completely on appropriate calibration files built on the ground using crispy
 
 import numpy as np
+from astropy.io import fits
+from scipy import interpolate
 
-
-def extract1D(image,lamlist,calib,sum=False, delt_y=5):
+def extract1D(  image,
+                lamlist,
+                calib_file,
+                sum=False,
+                delt_y=5
+                ):
     '''
     Performs 1D Horne spectral extraction if sum=False, or simply the 1D sum if sum=True.
     
@@ -15,9 +21,10 @@ def extract1D(image,lamlist,calib,sum=False, delt_y=5):
         Represents the cleaned IFS detector image.
     lamlist: 1D array of desired wavelengths
         Outputs data onto desired wavelength grid. Values are in nanometer
-    calib: calibration data structure
-        Contains all necessary calibration for extraction, including the mapping between
-        pixels and wavelengths, etc. This file can be created by the crispy main software.
+    calib_file: calibration data structure file path
+        Fits file that contains all necessary calibration for extraction, 
+        including the mapping between pixels and wavelengths, etc. 
+        This file can be created by the crispy main software.
     sum: boolean
         If True, this represents a 1D sum in the cross-spectral direction
         If False, this fits a 1D Gaussian in the cross-spectral direction
@@ -38,29 +45,32 @@ def extract1D(image,lamlist,calib,sum=False, delt_y=5):
     # number of lenslets (hardcoded for now)
     nlens=108
     
+    # load calibration file
+    calib = fits.open(calib_file)
+    
+    # wavelength corresponding to each center pixel for each location along the spectral
+    # direction
+    lam_indx = calib[0].data
+    
     # x & y pixel locations of each psflet for each wavelength
     # nominally this is evaluated at the center of the pixels across the dispersion
     # direction
-    xindx = calib.xindx
-    yindx = calib.yindx
-    
-    # Number of maximum wavelengths across the spectral dimension across the entire field
-    Nmax = calib.nlam_max
+    xindx = calib[1].data
+    yindx = calib[2].data
     
     # array of number of wavelengths for each microspectrum
     # for example, towards the edges of the detector there will be less wavelengths
     # per microspectrum since some of them fall outside the detector 
-    nlam = calib.nlam
+    nlam = calib[3].data.astype(int)
     
-    # wavelength corresponding to each center pixel for each location along the spectral
-    # direction
-    lam_indx = calib.lam_indx
+    # Number of maximum wavelengths across the spectral dimension across the entire field
+    Nmax = np.amax(nlam)
+
+    # boolean mask for good vs bad psflets
+    good = calib[4].data.astype(int)
     
     # standard deviation of the gaussian fits (same size as xindx and yindx)
-    sig = calib.sig
-    
-    # boolean mask for good vs bad psflets
-    good = calib.good
+    sig = calib[5].data
     
     # define arrays of indices to extract the data from the detector
     x = np.arange(image.shape[1])
@@ -68,9 +78,10 @@ def extract1D(image,lamlist,calib,sum=False, delt_y=5):
     x, y = np.meshgrid(x, y)
     
     # allocate space for results
-    coefs = np.zeros(tuple([max(Nmax, len(lamlist)] + list(yindx.shape)[:-1]))
+    coefs = np.zeros(tuple([max(Nmax, len(lamlist))] + list(yindx.shape)[:-1]))
     cube = np.zeros((len(lamlist), nlens, nlens))
     xarr, yarr = np.meshgrid(np.arange(Nmax), np.arange(delt_y))
+    print xarr.shape,yarr.shape
 
     # This is the main loop over all lenslets
     for i in range(xindx.shape[0]):
@@ -78,10 +89,10 @@ def extract1D(image,lamlist,calib,sum=False, delt_y=5):
             # only do this for a good lenslet that hasn't been flagged
             if good[i, j]:
                 # load the values for this microspectrum
-                _x = xindx[i, j, :calib.nlam[i, j]]
-                _y = yindx[i, j, :calib.nlam[i, j]]
-                _sig = sig[i, j, :calib.nlam[i, j]]
-                _lam = lam_indx[i, j, :calib.nlam[i, j]]
+                _x = xindx[i, j, :nlam[i, j]]
+                _y = yindx[i, j, :nlam[i, j]]
+                _sig = sig[i, j, :nlam[i, j]]
+                _lam = lam_indx[i, j, :nlam[i, j]]
                 # this needs to be done just to get rid of unintended NaNs
                 iy = np.nanmean(_y)
                 
@@ -94,7 +105,7 @@ def extract1D(image,lamlist,calib,sum=False, delt_y=5):
                     dy = _y[xarr[:,:len(_lam)]] - y[i1:i1 + delt_y,int(_x[0]):int(_x[-1]) + 1]
                     
                     # now extract the microspectrum from the image
-                    data = img[i1:i1 + delt_y, int(_x[0]):int(_x[-1]) + 1]
+                    data = image[i1:i1 + delt_y, int(_x[0]):int(_x[-1]) + 1]
 
                     # if the mode is simple sum, we will not need any weights
                     if sum: weight = 1.
