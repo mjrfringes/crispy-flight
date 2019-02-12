@@ -193,13 +193,13 @@ def apply_update(   dx,
         # about the center of the detector
         A_data = []
         for pt in old:
-          A_data.append( [-pt[1], pt[0], 1, 0] )
-          A_data.append( [ pt[0], pt[1], 0, 1] )
+            A_data.append( [-pt[1], pt[0], 1, 0] )
+            A_data.append( [ pt[0], pt[1], 0, 1] )
 
         b_data = []
         for pt in new:
-          b_data.append(pt[0])
-          b_data.append(pt[1])
+            b_data.append(pt[0])
+            b_data.append(pt[1])
 
         # Solve via least squares (svd also possible if preferred)
         # Solving Ax=b

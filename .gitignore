@@ -1,2 +1,6 @@
 
 *.pyc
+
+Out/*
+
+PISCES_Files/*

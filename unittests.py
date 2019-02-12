@@ -1,6 +1,7 @@
 from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 def gauss(x, a, x0, sig,b):
     '''
@@ -59,3 +60,48 @@ def histograms(dx,dy):
     plt.hist(dy[~np.isnan(dy)], bins='auto',label='dy') 
     plt.legend()
 
+
+def inspect_update(old_mono,
+                   update_image,
+                   new_mono,
+                   outname=None,
+                   outdir=''):
+    
+    
+    fig, ax = plt.subplots(figsize=(15, 15))
+    image = fits.getdata(update_image)
+    # start by displaying grayscale image in the background
+    mean = np.mean(image)
+    std = np.std(image)
+    norm = mpl.colors.Normalize(vmin=mean, vmax=mean + 5 * std)
+    ax.imshow(
+        image,
+        cmap='Greys',
+        norm=norm,
+        interpolation='nearest',
+        origin='lower')
+    
+    # open new monochrome and display positions as red circles
+    monochromekey = fits.open(new_mono)
+    xpos = monochromekey[1].data
+    ypos = monochromekey[2].data
+    marker = '+'
+    plt.plot(xpos.flatten(),ypos.flatten(),marker=marker,linestyle='None',color='crimson',alpha=0.5, label='New wavelength solution')
+    
+    # open old monochrome and display positions as blue crosses
+    monochromekey = fits.open(old_mono)
+    xpos = monochromekey[1].data
+    ypos = monochromekey[2].data
+    marker = 'x'
+    plt.plot(xpos.flatten(),ypos.flatten(),marker=marker,linestyle='None',alpha=0.3, label='Old wavelength solution')
+    plt.xlim([0,image.shape[0]])
+    plt.ylim([0,image.shape[1]])
+    plt.legend(fontsize=20)
+    if outname is None: 
+        if '/' in update_image:
+            name = update_image.split('/')[-1].split('.fits')[0]
+    else: name = outname
+    print(name)
+    fig.savefig(outdir+'inspect_update_%s.pdf' % (name), dpi=100)
+    fig.savefig(outdir+'inspect_update_%s.png' % (name), dpi=300)
+    plt.close(fig)
