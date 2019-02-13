@@ -2,7 +2,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-
+from astropy.io import fits
 def gauss(x, a, x0, sig,b):
     '''
     Simple gaussian function with usual inputs
