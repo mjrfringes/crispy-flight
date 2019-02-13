@@ -149,10 +149,11 @@ def apply_update(   dx,
         for ix in range(xindx.shape[0]):
             for iy in range(xindx.shape[1]):
                 if good[ix,iy]:
-                    tck_y = interpolate.splrep(xindx[ix,iy,:nlam[ix,iy]], lams[ix,iy,:nlam[ix,iy]], k=1, s=0)
+                    new_x = xindx[ix,iy,:nlam[ix,iy]] + np.floor(Dx)
                     dDx = Dx - np.floor(Dx)
-                    hdul[0].data[ix,iy,:nlam[ix,iy]] = interpolate.splev(xindx[ix,iy,:nlam[ix,iy]]+dDx, tck_y)
-                    hdul[1].data[ix,iy,:nlam[ix,iy]] += np.floor(Dx)
+                    tck_y = interpolate.splrep(new_x, lams[ix,iy,:nlam[ix,iy]], k=1, s=0)
+                    hdul[0].data[ix,iy,:nlam[ix,iy]] = interpolate.splev(new_x-dDx, tck_y)
+                    hdul[1].data[ix,iy,:nlam[ix,iy]] = new_x
                     hdul[2].data[ix,iy,:nlam[ix,iy]] += Dy
                     
         hdul.writeto(new_calib_file)
@@ -244,11 +245,12 @@ def apply_update(   dx,
         for ix in range(xindx.shape[0]):
             for iy in range(xindx.shape[1]):
                 if good[ix,iy]:
-                    tck_y = interpolate.splrep(xindx[ix,iy,:nlam[ix,iy]], lams[ix,iy,:nlam[ix,iy]], k=1, s=0)
                     iDx = np.floor(Dx[ix,iy])
+                    new_x = xindx[ix,iy,:nlam[ix,iy]] + iDx
                     dDx = Dx[ix,iy] - iDx
-                    hdul[0].data[ix,iy,:nlam[ix,iy]] = interpolate.splev(xindx[ix,iy,:nlam[ix,iy]]+dDx, tck_y)
-                    hdul[1].data[ix,iy,:nlam[ix,iy]] += iDx
+                    tck_y = interpolate.splrep(new_x, lams[ix,iy,:nlam[ix,iy]], k=1, s=0)
+                    hdul[0].data[ix,iy,:nlam[ix,iy]] = interpolate.splev(new_x-dDx, tck_y)
+                    hdul[1].data[ix,iy,:nlam[ix,iy]] = new_x
                     hdul[2].data[ix,iy,:nlam[ix,iy]] += Dy[ix,iy]
         
         hdul.writeto(new_calib_file)
