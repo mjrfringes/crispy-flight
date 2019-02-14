@@ -107,10 +107,11 @@ def inspect_update(old_mono,
     fig.savefig(outdir+'inspect_update_%s.png' % (name), dpi=300)
     plt.close(fig)
     
-def check_calib(image,
-                lam,
+def check_calib(fname, # file name of image used to update
+                lam,   # wavelength corresponding to image
                 calib_file,
-                ):
+                outdir='', 
+                outname='test'):
     '''
     '''
     
@@ -171,11 +172,24 @@ def check_calib(image,
                 xpos[i,j] = interpolate.splev(lam, tck, ext=1)
                 ypos[i,j] = np.nanmean(_y)
                 
-                
-    # It is possible that an extra flatfielding step will be wanted. If this is desired
-    # in this function, then it would be:
-    # cube *= flatfield
-    # A similar expression would hold for further masking or smoothing or whatever.
-    # Of course, a flatfield and/or a mask would need to be supplied to the function.
+    fig, ax = plt.subplots(figsize=(15, 15))
+    image = fits.getdata(fname)
+    # start by displaying grayscale image in the background
+    mean = np.mean(image)
+    std = np.std(image)
+    norm = mpl.colors.Normalize(vmin=mean, vmax=mean + 5 * std)
+    ax.imshow(
+        image,
+        cmap='Greys',
+        norm=norm,
+        interpolation='nearest',
+        origin='lower')
+
+    marker='+'
+    plt.plot(xpos.flatten(),ypos.flatten(),marker=marker,linestyle='None',color='crimson',alpha=0.5, label='New wavelength solution')
+    plt.xlim([0,image.shape[0]])
+    plt.ylim([0,image.shape[1]])
+    plt.legend(fontsize=20)
     
-    return xpos,ypos
+    fig.savefig(outdir+'%s.pdf' % outname, dpi=100)
+                
