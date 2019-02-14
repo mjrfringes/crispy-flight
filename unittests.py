@@ -47,7 +47,7 @@ def fit_monochromatic_cube( cube,
     # gauss(lamlist,*popt)
 
 def plotfit(cube,lamlist):
-    vals = np.nansum(np.nansum(cube,axis=2),axis=1)
+    vals = np.nanmean(cube,axis=(1,2))
     popt, pcov = fit_monochromatic_cube(cube,lamlist,returnAll=True)
     curve_vals = gauss(lamlist, *popt)
     print popt[1]
