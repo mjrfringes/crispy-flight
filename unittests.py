@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from astropy.io import fits
+from scipy import interpolate
 
 def gauss(x, a, x0, sig,b,c):
     '''
@@ -117,6 +118,8 @@ def check_calib(fname, # file name of image used to update
     
     # number of lenslets (hardcoded for now)
     nlens=108
+    
+    image = fits.getdata(fname)
     
     # load calibration file
     calib = fits.open(calib_file)
